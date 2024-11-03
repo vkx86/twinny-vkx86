@@ -1,8 +1,8 @@
 {
-  "name": "twinny-vkx86",
-  "displayName": "twinny-vkx86 - AI Code Completion and Chat",
+  "name": "twinny",
+  "displayName": "twinny - AI Code Completion and Chat",
   "description": "Locally hosted AI code completion plugin for vscode",
-  "version": "3.18.1",
+  "version": "3.18.3",
   "icon": "assets/icon.png",
   "keywords": [
     "code-inference",
