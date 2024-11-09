@@ -1,9 +1,9 @@
 import * as lancedb from "@lancedb/lancedb"
 import { IntoVector } from "@lancedb/lancedb/dist/arrow"
 import fs from "fs"
+import ignore from "ignore"
 import path from "path"
 import * as vscode from "vscode"
-import ignore from "ignore"
 
 import { ACTIVE_EMBEDDINGS_PROVIDER_STORAGE_KEY } from "../common/constants"
 import { logger } from "../common/logger"
@@ -13,18 +13,18 @@ import {
   Embedding,
   LMStudioEmbedding,
   RequestOptionsOllama,
-  StreamRequestOptions as RequestOptions,
+  StreamRequestOptions as RequestOptions
 } from "../common/types"
 
 import { fetchEmbedding } from "./api"
+import { Base } from "./base"
 import { TwinnyProvider } from "./provider-manager"
 import {
   getDocumentSplitChunks,
-  getIgnoreDirectory,
   readGitSubmodulesFile
 } from "./utils"
 
-export class EmbeddingDatabase {
+export class EmbeddingDatabase extends Base {
   private _documents: EmbeddedDocument[] = []
   private _filePaths: EmbeddedDocument[] = []
   private _db: lancedb.Connection | null = null
@@ -35,6 +35,7 @@ export class EmbeddingDatabase {
   private _filePathTableName = `${this._workspaceName}-file-paths`
 
   constructor(dbPath: string, extensionContext: vscode.ExtensionContext) {
+    super()
     this._dbPath = dbPath
     this._extensionContext = extensionContext
   }
@@ -95,7 +96,17 @@ export class EmbeddingDatabase {
     const rootPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || ""
 
     const ig = ignore()
+
+    const embeddingIgnoredGlobs = this.config.get(
+      "embeddingIgnoredGlobs",
+      [] as string[]
+    )
+
+    ig.add(embeddingIgnoredGlobs)
+    ig.add([".git", ".gitignore"])
+
     const gitIgnoreFilePath = path.join(rootPath, ".gitignore")
+
     if (fs.existsSync(gitIgnoreFilePath)) {
       ig.add(fs.readFileSync(gitIgnoreFilePath).toString())
     }
@@ -103,8 +114,6 @@ export class EmbeddingDatabase {
     for (const dirent of dirents) {
       const fullPath = path.join(dirPath, dirent.name)
       const relativePath = path.relative(rootPath, fullPath)
-
-      if (getIgnoreDirectory(dirent.name)) continue
 
       if (submodules?.some((submodule) => fullPath.includes(submodule))) {
         continue
