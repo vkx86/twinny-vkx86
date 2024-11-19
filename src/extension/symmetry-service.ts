@@ -8,7 +8,8 @@ import os from "os"
 import path from "path"
 import { EventEmitter } from "stream"
 import { serverMessageKeys, SymmetryProvider } from "symmetry-core"
-import { commands, ExtensionContext, Webview, workspace } from "vscode"
+import * as vscode from "vscode"
+import { commands, ExtensionContext, Webview, window, workspace } from "vscode"
 
 import {
   ACTIVE_CHAT_PROVIDER_STORAGE_KEY,
@@ -262,7 +263,7 @@ export class SymmetryService extends EventEmitter {
     return path.join(homeDir, ".config", "symmetry", "provider.yaml")
   }
 
-  private createOrUpdateProviderConfig(providerConfig: TwinnyProvider): void {
+  private createProviderConfig(provider: TwinnyProvider): Promise<void> {
     const configPath = this.getSymmetryConfigPath()
     const configDir = path.dirname(configPath)
 
@@ -271,15 +272,15 @@ export class SymmetryService extends EventEmitter {
     }
 
     const symmetryConfiguration = yaml.dump({
-      apiHostname: providerConfig.apiHostname,
-      apiKey: providerConfig.apiKey,
-      apiPath: providerConfig.apiPath,
-      apiPort: providerConfig.apiPort,
-      apiProtocol: providerConfig.apiProtocol,
-      apiProvider: providerConfig.provider,
+      apiHostname: provider.apiHostname,
+      apiKey: provider.apiKey,
+      apiPath: provider.apiPath,
+      apiPort: provider.apiPort,
+      apiProtocol: provider.apiProtocol,
+      apiProvider: provider.provider,
       dataCollectionEnabled: false,
       maxConnections: 10,
-      modelName: providerConfig.modelName,
+      modelName: provider.modelName,
       name: os.hostname(),
       path: configPath,
       public: true,
@@ -287,18 +288,18 @@ export class SymmetryService extends EventEmitter {
       systemMessage: ""
     })
 
-    fs.writeFileSync(configPath, symmetryConfiguration, "utf8")
+    return fs.promises.writeFile(configPath, symmetryConfiguration, "utf8");
   }
 
-  public async startSymmetryProvider() {
-    const providerConfig = this.getChatProvider()
+  public startSymmetryProvider = async () => {
+    const provider = this.getChatProvider()
 
-    if (!providerConfig) return
+    if (!provider) return
 
     const configPath = this.getSymmetryConfigPath()
 
     if (!fs.existsSync(configPath)) {
-      this.createOrUpdateProviderConfig(providerConfig)
+      await this.createProviderConfig(provider)
     }
 
     this._provider = new SymmetryProvider(configPath)
@@ -324,7 +325,7 @@ export class SymmetryService extends EventEmitter {
     })
   }
 
-  public async stopSymmetryProvider() {
+  public stopSymmetryProvider = async () => {
     await this._provider?.destroySwarms()
     updateSymmetryStatus(this._webView, "disconnected")
     const sessionKey = EXTENSION_SESSION_NAME.twinnySymmetryConnectionProvider

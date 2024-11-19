@@ -13,6 +13,7 @@ import { logger } from "../../common/logger"
 import {
   ApiModel,
   ClientMessage,
+  FileItem,
   InferenceRequest,
   Message,
   ServerMessage
@@ -142,11 +143,23 @@ export class BaseProvider {
       [EVENT_NAME.twinnyFileListRequest]: this.fileListRequest,
       [EVENT_NAME.twinnyNewConversation]: this.twinnyNewConversation,
       [EVENT_NAME.twinnyEditDefaultTemplates]: this.editDefaultTemplates,
+      [EVENT_NAME.twinntGetLocale]: this.sendLocaleToWebView,
       [TWINNY_COMMAND_NAME.settings]: this.openSettings
     }
     this.webView?.onDidReceiveMessage((message: ClientMessage<Message[]>) => {
       const eventHandler = eventHandlers[message.type as string]
       if (eventHandler) eventHandler(message)
+    })
+    vscode.workspace.onDidChangeConfiguration((event) => {
+      if (!event.affectsConfiguration("twinny")) return
+      this.sendLocaleToWebView()
+    })
+  }
+
+  private sendLocaleToWebView = () => {
+    this.webView?.postMessage({
+      type: EVENT_NAME.twinnySetLocale,
+      data: vscode.workspace.getConfiguration("twinny").get("locale") as string
     })
   }
 
@@ -354,6 +367,7 @@ export class BaseProvider {
 
     this._chatService?.streamChatCompletion(
       data.data || [],
+      data.meta as FileItem[]
     )
   }
 
