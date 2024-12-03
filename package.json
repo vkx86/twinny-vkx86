@@ -2,7 +2,7 @@
   "name": "twinny-vkx86",
   "displayName": "twinny-vkx86 - AI Code Completion and Chat",
   "description": "Locally hosted AI code completion plugin for vscode",
-  "version": "3.19.13",
+  "version": "3.19.15",
   "icon": "assets/icon.png",
   "keywords": [
     "code-inference",
@@ -512,7 +512,7 @@
     "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.0",
     "string_score": "^0.1.22",
-    "symmetry-core": "^1.0.17",
+    "symmetry-core": "^1.0.22",
     "tippy.js": "^6.3.7",
     "tiptap-markdown": "^0.8.10",
     "toxe": "^1.1.0",
